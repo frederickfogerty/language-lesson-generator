@@ -2,41 +2,58 @@ import textToSpeech from "@google-cloud/text-to-speech";
 import fs from "fs";
 import inquirer from "inquirer";
 import util from "util";
+import {
+  ABSOLUTE_PATH_TO_GOOGLE_KEY,
+  LANGUAGE_CODE,
+  LANGUAGE_NAME,
+  LESSON_INTRO,
+  LESSON_OUTRO,
+  REPEAT_INTRO,
+  SSML_GENDER,
+  TITLE_PROMPT,
+  WORDS_PROMPT,
+} from "./config";
 
 const genClient = () => {
-  process.env.GOOGLE_APPLICATION_CREDENTIALS =
-    "/Users/fred/Downloads/dutch-tts-dd6be355172f.json";
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = ABSOLUTE_PATH_TO_GOOGLE_KEY;
 
   return new textToSpeech.TextToSpeechClient();
 };
 
-const buildSSML = ({ titel, woorden }: { titel: string; woorden: string }) => {
-  const lines = woorden.trim().split("\n");
+const buildSSML = ({ title, words }: { title: string; words: string }) => {
+  const lines = words.trim().split("\n");
 
   const linesWithWords = lines
     .filter((line) => line.trim() !== "" || line.includes("-"))
     .map((line) => line.split("-").map((v) => v.trim()));
 
-  return `<speak>Welkom naar ${titel} van de Nederlandse woordenschat.<break time="2000ms"/>
-${linesWithWords
-  .map(
-    (words) =>
-      `${words[0]}<break time="3000ms"/>${words[1]}<break time="3000ms"/>`
-  )
-  .join("")}
+  const introSSML = LESSON_INTRO(title);
+  const learnSectionSSML = linesWithWords
+    .map(
+      (words) =>
+        `${words[0]}<break time="3000ms"/>${words[1]}<break time="3000ms"/>`
+    )
+    .join("");
+  const repeatSectionIntroSSML = REPEAT_INTRO();
+  const repeatSectionSSML = shuffle(linesWithWords)
+    .map(
+      (words) =>
+        `${words[0]}<break time="3000ms"/>${words[1]}<break time="3000ms"/>`
+    )
+    .join("");
 
-En opniew<break time="2000ms"/>
-${shuffle(linesWithWords)
-  .map(
-    (words) =>
-      `${words[0]}<break time="3000ms"/>${words[1]}<break time="3000ms"/>`
-  )
-  .join("")}
+  const lessonOutroSSML = LESSON_OUTRO(title);
+  return `<speak>
+  ${introSSML}
+  <break time="2000ms"/>
+  ${learnSectionSSML}
+
+  ${repeatSectionIntroSSML}
+  <break time="2000ms"/>
+  ${repeatSectionSSML}
   
-    En dat was ${titel} van de woordenschat,<break time="500ms"/> tot volgend keer.
-</speak>`;
-  // .replace(/\n/g, " ");
-  // .replace(/"/g, `"`);
+  ${lessonOutroSSML}
+  </speak>`;
 };
 
 const main = async () => {
@@ -44,34 +61,33 @@ const main = async () => {
 
   const client = genClient();
 
-  const answers = await inquirer.prompt([
+  const answers = await inquirer.prompt<{ title: string; words: string }>([
     {
       type: "input",
-      name: "titel",
-      message: `Wat zou de titel van dit les zijn?`,
+      name: "title",
+      message: TITLE_PROMPT,
     },
     {
       type: "editor",
-      message: "Vul de woorden voor dit les",
-      name: "woorden",
+      message: WORDS_PROMPT,
+      name: "words",
     },
   ]);
 
-  console.log(answers);
-
   const ssml = buildSSML({
-    titel: answers.titel,
-    woorden: answers.woorden,
+    title: answers.title,
+    words: answers.words,
   });
   console.log(`ssml`, ssml);
+
   const request = {
     input: {
       ssml: ssml,
     },
     voice: {
-      languageCode: "nl-NL",
-      name: "nl-NL-Wavenet-B",
-      ssmlGender: "FEMALE",
+      languageCode: LANGUAGE_CODE,
+      name: LANGUAGE_NAME,
+      ssmlGender: SSML_GENDER,
     },
     audioConfig: {
       audioEncoding: "MP3",
@@ -85,9 +101,9 @@ const main = async () => {
   }
   // Write the binary audio content to a local file
   const writeFile = util.promisify(fs.writeFile);
-  const fileName = `${answers.titel}.mp3`;
+  const fileName = `output/${answers.title}.mp3`;
   await writeFile(fileName, response.audioContent, "binary");
-  console.log(`Audio content written to file: ${fileName}`);
+  console.log(`✅ Audio content written to file: ${fileName}`);
 };
 
 main();
