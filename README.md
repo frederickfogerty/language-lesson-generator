@@ -1,8 +1,6 @@
 <div align="center">
 	<br>
-	<a href="https://raw.githubusercontent.com/sindresorhus/css-in-readme-like-wat/main/readme.md">
 		<img src="header.svg" width="800" height="400" alt="Click to see the source">
-	</a>
 	<br>
 </div>
 
@@ -13,7 +11,7 @@
 3. `yarn install`
 4. Adjust config settings in `config.ts`
 5. `npx ts-node index.ts`
-6. Follow instructions (see "Input Format" below)
+6. Follow CLI instructions (see "Input Format" below)
 7. See audio lesson saved in `output`
 
 ## Input format
