@@ -1,6 +1,6 @@
 <div align="center">
 	<br>
-		<img src="header.svg" width="800" height="400" alt="Click to see the source">
+		<img src="https://github.com/frederickfogerty/language-lesson-generator/raw/main/header.svg?sanitize=true" width="800" height="400" alt="Click to see the source">
 	<br>
 </div>
 
